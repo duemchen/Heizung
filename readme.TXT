@@ -1,4 +1,3 @@
-Aufruf auf dem Raspi
 
 ip 192.168.10.131
 
