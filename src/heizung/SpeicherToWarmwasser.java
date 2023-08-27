@@ -59,7 +59,7 @@ class SpeicherToWarmwasser extends Thread {
         boolean heizen = false;
         //if (tempSpeicher.getTempLast().doubleValue() >= SP_MIN) {
         // speicher soll immer mindestens 3 grad heisser als das WW sein
-        if (tempSpeicher.getTempLast().doubleValue() >= 5 + tempWarmwasser.getTempLast().doubleValue()) {
+        if (tempSpeicher.getTempLast().doubleValue() >= 3 + tempWarmwasser.getTempLast().doubleValue()) {
 
             if (tempWarmwasser.getTempLast().doubleValue() < WW_SOLL) {
 

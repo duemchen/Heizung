@@ -16,10 +16,25 @@ import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
 import org.json.JSONException;
 
 /**
+ * TODO Wennn speicher voll war und sonniger Tag Ist die Stadtleitung kalt. Wenn
+ * warmwasser nun unter Sollwert geht wird aus dem Speicher weiter geheizt,
+ * solange der Speicher 5 grd höher als WW ist. Gleichzeitig geht aber der
+ * AnalogReglerWW auf und schickt kaltes Wasser durch den WW Boiler Das ist
+ * doof. Da soll lieber die Heizung an gehen, bis der StatdtVL auf Temperatur
+ * kommt. Die kühlt dann den Tauscher der Heizung, der aber im Sommer kalt ist,
+ * weil nicht geheizt wird.
+ *
+ * Notwendig ein Fühler am Stadt Eingang
+ *
+ *
+ *
+ */
+/**
  *
  * @author duemchen
  */
 class FernHeizung extends Thread {
+
     private static final org.apache.logging.log4j.Logger log = org.apache.logging.log4j.LogManager.getLogger("fern");
     private static SimpleDateFormat sdhh = new SimpleDateFormat("HH");
 
@@ -35,7 +50,7 @@ class FernHeizung extends Thread {
     private final double VERSTAERKUNG = 1.0;//2;//5;//10; //5  20*delta 5 grad bringen 100% heizung
     //
     private double INTERGALFAKTOR = 0.01;  //
-    private double integralAnteil = 25;  //0 solange Abweichung ist, wird hier langsam gegengezogen
+    private double integralAnteil = 35;  // war 25,   0 solange Abweichung ist, wird hier langsam gegengezogen
     private double lastTemp = 0;
     private double DIFERENTIALFAKTOR = 10;//40;
     //
@@ -46,6 +61,7 @@ class FernHeizung extends Thread {
     private int absenkVon;
     private int absenkBis;
     private int absenkGrad;
+    private boolean fernHeizungAktiv;
     private final String HEIZKURVE_INI = "heizkurve.ini";
     private long ageHeizkurveIni = -3;
     private final String REGLER_INI = "regler.ini";
@@ -99,7 +115,7 @@ class FernHeizung extends Thread {
         if (ageHeizkurveIni != HoraFile.fileAge(HEIZKURVE_INI)) {
             heizkurveLin = null;
             ageHeizkurveIni = HoraFile.fileAge(HEIZKURVE_INI);
-            System.out.println("Neueinlesen "+HEIZKURVE_INI);
+            System.out.println("Neueinlesen " + HEIZKURVE_INI);
         }
 
         if (heizkurveLin == null) {
@@ -127,35 +143,39 @@ class FernHeizung extends Thread {
             // soll = Constants.getVLSommer();
         }
         Heizkurve.setSoll(soll);
-        log.info("soll:" + soll);
         da.off();
-        if (!HoraIni.LeseIniBool("Regler.ini", "Heizung", "aktiv", true, true)) {
+        if (!fernHeizungAktiv) { // (!HoraIni.LeseIniBool(REGLER_INI, "Heizung", "aktiv", true, true)) {
+            log.info("fernheizung off:" + soll);
             Thread.sleep(30000);
             return;
         }
+        log.info("soll:" + soll);
         if (isNachtabsenkungszeit()) {
             if (tempAussen > 15) {
                 Thread.sleep(5000);
                 return;
             }
         } else {
-            if (tempAussen > 18) {
+            if (tempAussen > 19) {
+                log.info("aussen zu hoch, soll:"+ soll);
                 Thread.sleep(5000);
                 return;
             }
         }
         if (tempVorlauf.getTempLast().doubleValue() <= 10) {
             // sensor hat versagt
+            log.info("sensor defekt");
             Thread.sleep(5000);
             return;
         }
         // System.out.println("SollTemp: " + soll + "   Aussen: " + tempAussen);
         // erst wenn die Speicher verbraucht sind. kleine hysterese einbauen
         setSollwert(soll);
-        boolean zuHeizen = tempSpeicher.getTempLast().doubleValue() < soll;
+        boolean zuHeizen = tempSpeicher.getTempLast().doubleValue() < soll + 5;
         //isSolar=!zuHeizen;
         //zuHeizen = true;
         if (!zuHeizen) {
+            log.info("Zuheizen unnötig.");
             //System.out.println(" -> Fernwärme AUS, Speicher ist heiss genug: " + tempSpeicher.getTempLast());
             //anheizen=true;
             Thread.sleep(60000);
@@ -164,13 +184,15 @@ class FernHeizung extends Thread {
 
         if (tempFernRL.getTempLast().doubleValue() > 40) {
             // Abschalten, wenn offenbar nix gebraucht
+            log.info("Rücklauf zu heiss. Keine Abnahme.");
             Thread.sleep(10000);
             return;
         }
         if (tempFernRL.getTempLast().doubleValue() > tempVorlauf.getTempLast().doubleValue()) {
+            log.info("Rücklauf höher als Vorlauf.");
             // Abschalten, wenn StadtRücklauf heisser als HeizungsVorlauf
-            // Thread.sleep(10000);
-            // return;
+            Thread.sleep(10000);
+            return;
         }
 
         double ist = tempVorlauf.getTempLast().doubleValue();
@@ -201,6 +223,7 @@ class FernHeizung extends Thread {
         int on = (int) ((proz / 100) * PERIODE);
         int off = (int) (((100 - proz) / 100) * PERIODE);
         // System.out.println("vorlauf:" + tempVorlauf.getTempLast() + " C / " + tempRuecklauf.getTempLast() + " C, gesamt:" + proz + ", p:" + prozAnteil + ", i:" + integralAnteil + ", d:" + diffAnteil + ", on:" + on + ",  off:" + off);
+        log.info("on:" + on + ",  off:" + off);
         if (on > 500) { //Kontaktschonung
             da.on();
         }
@@ -232,6 +255,7 @@ class FernHeizung extends Thread {
         absenkVon = HoraIni.LeseIniInt(reglerIni, "Absenkung", "von", 22, true);
         absenkBis = HoraIni.LeseIniInt(reglerIni, "Absenkung", "bis", 6, true);
         absenkGrad = HoraIni.LeseIniInt(reglerIni, "Absenkung", "grad", 5, true);
+        fernHeizungAktiv = HoraIni.LeseIniBool(REGLER_INI, "Heizung", "aktiv", true, true);
     }
 
 }
