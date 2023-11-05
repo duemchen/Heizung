@@ -149,15 +149,16 @@ class FernHeizung extends Thread {
             Thread.sleep(30000);
             return;
         }
-        log.info("soll:" + soll);
+        log.info("soll:" + soll+", istVL:"+tempVorlauf.getTempLast().doubleValue());
         if (isNachtabsenkungszeit()) {
             if (tempAussen > 15) {
+                log.info("Nachtabsenkung. aus über 15 grd,  " + tempAussen);
                 Thread.sleep(5000);
                 return;
             }
         } else {
             if (tempAussen > 19) {
-                log.info("aussen zu hoch, soll:"+ soll);
+                log.info("aussen zu hoch, soll:" + soll);
                 Thread.sleep(5000);
                 return;
             }
@@ -188,11 +189,14 @@ class FernHeizung extends Thread {
             Thread.sleep(10000);
             return;
         }
-        if (tempFernRL.getTempLast().doubleValue() > tempVorlauf.getTempLast().doubleValue()) {
-            log.info("Rücklauf höher als Vorlauf.");
-            // Abschalten, wenn StadtRücklauf heisser als HeizungsVorlauf
-            Thread.sleep(10000);
-            return;
+        if (tempVorlauf.getTempLast().doubleValue() > soll) {
+            // geheizt muss erteinmal werden. 
+            if (tempFernRL.getTempLast().doubleValue() > tempVorlauf.getTempLast().doubleValue()) {
+                log.info("Rücklauf höher als Vorlauf.");
+                // Abschalten, wenn StadtRücklauf heisser als HeizungsVorlauf
+                Thread.sleep(10000);
+                return;
+            }
         }
 
         double ist = tempVorlauf.getTempLast().doubleValue();
@@ -255,7 +259,7 @@ class FernHeizung extends Thread {
         absenkVon = HoraIni.LeseIniInt(reglerIni, "Absenkung", "von", 22, true);
         absenkBis = HoraIni.LeseIniInt(reglerIni, "Absenkung", "bis", 6, true);
         absenkGrad = HoraIni.LeseIniInt(reglerIni, "Absenkung", "grad", 5, true);
-        fernHeizungAktiv = HoraIni.LeseIniBool(REGLER_INI, "Heizung", "aktiv", true, true);
+        fernHeizungAktiv = HoraIni.LeseIniBool(reglerIni, "Heizung", "aktiv", true, true);
     }
 
 }
