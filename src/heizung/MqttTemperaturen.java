@@ -12,7 +12,6 @@ import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.logging.log4j.core.appender.MemoryMappedFileManager;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
@@ -56,14 +55,14 @@ class MqttTemperaturen {
         JSONObject jo = new JSONObject();
         JSONObject temperaturen = new JSONObject();
         JSONObject relais = new JSONObject();
-        for (Heizung.TEMP temp : Heizung.TEMP.values()) {
+        for (TEMP temp : TEMP.values()) {
             //content += temp.name() + "=" + temp.getTempLast() + ", ";
             temperaturen.put(temp.name(), temp.getTempLast());
         }
         temperaturen.put("AUSSEN", aussenTemp);
         temperaturen.put("SOLL", Double.parseDouble(String.format("%3.2f", soll)));
 
-        for (Heizung.DA da : Heizung.DA.values()) {
+        for (DA da : DA.values()) {
             relais.put(da.name(), da.isOn());
         }
         jo.put("time", HoraTime.dateToStr(new Date()));
@@ -98,11 +97,11 @@ class MqttTemperaturen {
         MqttMessage mmSoll = new MqttMessage();
         mmSoll.setPayload(content.getBytes());
 //
-        content = String.format("%3.2f", Heizung.TEMP.FERNHEIZ_VORLAUF.getTempLast().doubleValue());
+        content = String.format("%3.2f", TEMP.FERNHEIZ_VORLAUF.getTempLast().doubleValue());
         MqttMessage mmVL = new MqttMessage();
         mmVL.setPayload(content.getBytes());
 //
-        content = String.format("%3.2f", Heizung.TEMP.FERNHEIZ_RUECKLAUF.getTempLast().doubleValue());
+        content = String.format("%3.2f", TEMP.FERNHEIZ_RUECKLAUF.getTempLast().doubleValue());
         MqttMessage mmRL = new MqttMessage();
         mmRL.setPayload(content.getBytes());
 

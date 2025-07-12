@@ -38,11 +38,11 @@ class FernHeizung extends Thread {
     private static final org.apache.logging.log4j.Logger log = org.apache.logging.log4j.LogManager.getLogger("fern");
     private static SimpleDateFormat sdhh = new SimpleDateFormat("HH");
 
-    private final Heizung.DA da;
-    private final Heizung.TEMP tempVorlauf;
-    private final Heizung.TEMP tempRuecklauf;
-    private final Heizung.TEMP tempSpeicher;
-    private final Heizung.TEMP tempFernRL;
+    private final DA da;
+    private final TEMP tempVorlauf;
+    private final TEMP tempRuecklauf;
+    private final TEMP tempSpeicher;
+    private final TEMP tempFernRL;
     //
     private double HYSTERESE = 0;//;1;
 
@@ -67,7 +67,8 @@ class FernHeizung extends Thread {
     private final String REGLER_INI = "regler.ini";
     private long ageReglerIni = -3;
 
-    public FernHeizung(Heizung.TEMP tempVorlauf, Heizung.TEMP tempRuecklauf, Heizung.TEMP tempSpeicher, Heizung.TEMP tempStadtRuecklauf, Heizung.DA da) {
+    public FernHeizung(TEMP tempVorlauf, TEMP tempRuecklauf,TEMP tempSpeicher, TEMP tempStadtRuecklauf, DA da) {
+        this.setName("FernHeizung");
         this.tempVorlauf = tempVorlauf;
         this.tempRuecklauf = tempRuecklauf;
         this.tempSpeicher = tempSpeicher;
@@ -151,8 +152,8 @@ class FernHeizung extends Thread {
         }
         log.info("soll:" + soll+", istVL:"+tempVorlauf.getTempLast().doubleValue());
         if (isNachtabsenkungszeit()) {
-            if (tempAussen > 15) {
-                log.info("Nachtabsenkung. aus über 15 grd,  " + tempAussen);
+            if (tempAussen > 18) { //15 dü// Dümchen 08.08.2024
+                log.info("Nachtabsenkung. aus über 18 grd,  " + tempAussen);
                 Thread.sleep(5000);
                 return;
             }
@@ -260,6 +261,8 @@ class FernHeizung extends Thread {
         absenkBis = HoraIni.LeseIniInt(reglerIni, "Absenkung", "bis", 6, true);
         absenkGrad = HoraIni.LeseIniInt(reglerIni, "Absenkung", "grad", 5, true);
         fernHeizungAktiv = HoraIni.LeseIniBool(reglerIni, "Heizung", "aktiv", true, true);
+        int warmwasserSoll = HoraIni.LeseIniInt(reglerIni, "Warmwasser", "Soll", 46, true);        
+        SpeicherToWarmwasser.setSoll(warmwasserSoll);        
     }
 
 }

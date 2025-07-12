@@ -49,66 +49,10 @@ public class Heizung {
     private double soll;
 
     /**
-     * iii
-     */
-    public static enum DA {
-
-        SOLARHOT(RaspiPin.GPIO_00), //
-        SOLARIMP(RaspiPin.GPIO_01), //
-        WWPUMPE(RaspiPin.GPIO_02), //
-        FERNWAERME(RaspiPin.GPIO_03),//
-        SOLARHEIZ_IMP(RaspiPin.GPIO_04),//
-        SOLARHEIZ_HOTTER(RaspiPin.GPIO_05), // öffnen bringt heisswasser aus Speicher
-        FREE(RaspiPin.GPIO_06), //
-        LIVE(RaspiPin.GPIO_10),;
-
-        private GpioPinDigitalOutput pin;
-
-        private DA(Pin pin) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-
-            }
-
-            this.pin = gpio.provisionDigitalOutputPin(pin, "", PinState.HIGH);
-        }
-
-        public GpioPinDigitalOutput getPin() {
-            return pin;
-        }
-
-        @Override
-        public String toString() {
-            String s = super.toString();
-            return s.substring(0, 1) + s.substring(1).toLowerCase();
-        }
-
-        public void on() {
-            pin.low();
-        }
-
-        public boolean isOff() {
-            return pin.isHigh();
-
-        }
-
-        public boolean isOn() {
-            return pin.isLow();
-        }
-
-        public void off() {
-            pin.high();
-
-        }
-
-    }
-
-    /**
      * jeder fühler wird aktiviert wenn er beim start gefunden wurde - alle IDs
      * sammeln in Hash, sortieren und speichern - laden *
      */
-    public enum TEMP {
+    public enum TEMPx {
 
         KOLL_VL,
         SP1_OBEN,
@@ -151,13 +95,18 @@ public class Heizung {
 
     private static void initTemperatureSensoren() throws IOException {
         System.out.println("hello " + HoraFile.getCanonicalPath(datei));
+        log.info("hello " + HoraFile.getCanonicalPath(datei));
         Set<se.hirt.w1.Sensor> sensors = Sensors.getSensors();
         System.out.println(String.format("Found %d sensors!", sensors.size()));
+        log.info(String.format("Found %d sensors!", sensors.size()));
         // jeder Sensor wird mit ID in eine Propertydatei eingetragen.
         // dort erfolgt die Zuordnung zu dem konkreten Sensor
         // FERN ID = 28-000000e46c60
         for (Sensor sensor : sensors) {
             System.out.println(String.format("%s(%s):%3.2f%s",
+                    sensor.getPhysicalQuantity(), sensor.getID(),
+                    sensor.getValue(), sensor.getUnitString()));
+            log.info(String.format("%s(%s):%3.2f%s",
                     sensor.getPhysicalQuantity(), sensor.getID(),
                     sensor.getValue(), sensor.getUnitString()));
             HoraIni.SchreibeIniString(datei, "SensorIDs", sensor.getID(), String.format("%3.2f", sensor.getValue()));
@@ -172,6 +121,7 @@ public class Heizung {
             }
             // diese ID in sensoren suchen und verschalten
             System.out.println(id);
+            log.info(id);
             for (Sensor sensor : sensors) {
                 //System.out.println(id + " " + sensor.getID());
                 if (!id.equalsIgnoreCase(sensor.getID())) {
@@ -185,6 +135,7 @@ public class Heizung {
 
         for (TEMP temp : TEMP.values()) {
             System.out.println(temp);
+            log.info(temp);
         }
 
     }
@@ -294,8 +245,11 @@ public class Heizung {
                 fernHeiz.setAussentemp(temp);
                 aussenTemp = temp;
                 lastHour = cal.get(Calendar.HOUR_OF_DAY);
+                log.info("Weather API Außentemperatur: "+temp);
             } catch (Exception e) {
                 System.out.println(e);
+                log.error(e);
+                lastHour = cal.get(Calendar.HOUR_OF_DAY); // trotzdem gesetzt
             }
 
         }
@@ -306,9 +260,7 @@ public class Heizung {
      * @param args the command line arguments
      */
     public static void main(String[] args) throws IOException, InterruptedException {
-
         Heizung heizung = new Heizung();
-
     }
 
 }

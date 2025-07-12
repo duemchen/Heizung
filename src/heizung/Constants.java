@@ -13,7 +13,7 @@ import de.horatio.common.HoraIni;
  */
 public class Constants {
 
-    static private double sollVL = HoraIni.LeseIniInt("Regler.ini", "Temperaturen", "VL_Winter", 45, true);
+    static private double sollVL = HoraIni.LeseIniInt("regler.ini", "Temperaturen", "VL_Winter", 45, true);
 
 
     public static double getVL() {

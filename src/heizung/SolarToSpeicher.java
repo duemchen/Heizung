@@ -20,16 +20,16 @@ class SolarToSpeicher extends Thread {
     private double DELTA = 5; // Sollwert. höher als die Speichertemp -> laden    
     private double HYSTERESE = 1;  // schieber nicht ändern. 
     //
-    private final Heizung.TEMP tempSp; // temp im Speicher
-    private final Heizung.TEMP tempKoll; // Temp vom Kollektor kommend
-    private final Heizung.DA hotter; // Richtung heisser = mehr Durchfluss zum Speicher (sonst kälter)
-    private final Heizung.DA impuls; // schieber ein stück rücken.
+    private final TEMP tempSp; // temp im Speicher
+    private final TEMP tempKoll; // Temp vom Kollektor kommend
+    private final DA hotter; // Richtung heisser = mehr Durchfluss zum Speicher (sonst kälter)
+    private final DA impuls; // schieber ein stück rücken.
     //
     private final long IMPULS_MS = 1000; // schieber ansteuerzeit
     private final long SLEEP_MS = 10000; // Pause dazwischen
     //
 
-    SolarToSpeicher(Heizung.TEMP tempKoll, Heizung.TEMP tempSp, Heizung.DA hot, Heizung.DA impuls) {
+    SolarToSpeicher(TEMP tempKoll, TEMP tempSp, DA hot, DA impuls) {
         this.tempKoll = tempKoll;
         this.tempSp = tempSp;
         this.hotter = hot;

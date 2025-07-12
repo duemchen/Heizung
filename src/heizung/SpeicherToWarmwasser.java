@@ -15,18 +15,24 @@ import java.util.logging.Logger;
 class SpeicherToWarmwasser extends Thread {
 
     private static final org.apache.logging.log4j.Logger log = org.apache.logging.log4j.LogManager.getLogger("soWarm");
-    private final Heizung.DA da;
-    private final Heizung.TEMP tempSpeicher;
-    private final Heizung.TEMP tempWarmwasser;
-    //
-    private double SP_MIN = 53; // mindesttemp
-    private double WW_SOLL = 50; // sollwert ww
-    private double HYSTERESE = 1;
+    private final DA da;
+    private final TEMP tempSpeicher;
+    private final TEMP tempWarmwasser;
+    //es gibt keine mindesttemp im speicher. Immer , wenn 3 grad mehr im Speicher, wird nachgeheizt
+    // dann läuft die pumpe aber auch lange.
+    // wenn die Fernwärme einsteigt wird irgendwann der speicher zu kalt sein, um zu heizen.
+    private static double WW_SOLL = 47; // 50; // sollwert ww
+    private final double HYSTERESE = 1;
 
-    public SpeicherToWarmwasser(Heizung.TEMP tempSpeicher, Heizung.TEMP tempWarmwasser, Heizung.DA da) {
+    public SpeicherToWarmwasser(TEMP tempSpeicher, TEMP tempWarmwasser, DA da) {
+        this.setName("SpeicherToWarmWasser");
         this.tempSpeicher = tempSpeicher;
         this.tempWarmwasser = tempWarmwasser;
         this.da = da;
+    }
+    
+    public static void setSoll(int soll){       
+        WW_SOLL = soll;
     }
 
     @Override
@@ -66,8 +72,9 @@ class SpeicherToWarmwasser extends Thread {
                 heizen = true;
             }
         }
-        // Hysterese: Ein erst etwas unter der solltemp, Aus sofort an der solltemp
+        // Hysterese: wieder Ein erst etwas unter der solltemp, Aus sofort an der solltemp
         if (heizen) {
+            // da wird hier als Speicher des Istzustandes benutzt.
             if (da.isOff()) {
                 double delta = Math.abs(tempWarmwasser.getTempLast().doubleValue() - WW_SOLL);
                 if (delta < HYSTERESE) {
