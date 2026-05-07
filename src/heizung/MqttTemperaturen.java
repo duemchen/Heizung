@@ -57,7 +57,9 @@ class MqttTemperaturen {
         JSONObject relais = new JSONObject();
         for (TEMP temp : TEMP.values()) {
             //content += temp.name() + "=" + temp.getTempLast() + ", ";
-            temperaturen.put(temp.name(), temp.getTempLast());
+            
+            //temperaturen.put(temp.name(), temp.getTempLast());
+            temperaturen.put(temp.name(), String.format("%3.2f", temp.getTempLast().doubleValue()));
         }
         temperaturen.put("AUSSEN", aussenTemp);
         temperaturen.put("SOLL", Double.parseDouble(String.format("%3.2f", soll)));
